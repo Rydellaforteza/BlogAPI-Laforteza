@@ -186,38 +186,42 @@ exports.addComment = (req, res) => {
 
 
 
-exports.deleteComment = (req, res) => {
-  Blog.findById(req.params.blogId)
-    .populate("userId", "username")
-    .populate("comments.userId", "username")
-    .then(blog => {
-      if (!blog) return res.status(404).json({ message: "Blog not found" });
+exports.deleteComment = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.blogId)
+      .populate("userId", "username")
+      .populate("comments.userId", "username");
 
-      const isAdmin = req.user.isAdmin === true;
-      const isOwner = req.user.id === String(blog.userId._id); // FIXED
-      const comment = blog.comments.id(req.params.commentId);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-      if (!comment)
-        return res.status(404).json({ message: "Comment not found" });
+    const isAdmin = req.user.isAdmin === true;
+    const isOwner = req.user.id === String(blog.userId._id); // blog owner
 
-      const isCommentOwner =
-        comment.userId._id.toString() === req.user.id; // FIXED
+    const comment = blog.comments.id(req.params.commentId);
+    if (!comment)
+      return res.status(404).json({ message: "Comment not found" });
 
-      if (!isAdmin && !isOwner && !isCommentOwner) {
-        return res.status(403).json({
-          message: "Only admin, blog owner, or comment owner can delete comments"
-        });
-      }
+    const isCommentOwner =
+      String(comment.userId._id || comment.userId) === req.user.id;
 
-      comment.remove();
-
-      blog.save().then(() => {
-        return res.status(200).json({ message: "Comment deleted" });
+    if (!isAdmin && !isOwner && !isCommentOwner) {
+      return res.status(403).json({
+        message:
+          "Only admin, blog owner, or comment owner can delete comments",
       });
-    })
-    .catch(err => {
-      console.error(err);
-      return res.status(500).json({ message: "Server error" });
-    });
+    }
+
+    // ------------------------------
+    // FIX: Use pull instead of remove()
+    // ------------------------------
+    blog.comments.pull(comment._id);
+
+    await blog.save();
+
+    return res.status(200).json({ message: "Comment deleted" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
