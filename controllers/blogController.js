@@ -194,14 +194,14 @@ exports.deleteComment = (req, res) => {
       if (!blog) return res.status(404).json({ message: "Blog not found" });
 
       const isAdmin = req.user.isAdmin === true;
-      const isOwner = req.user.id === String(blog.userId); // blog owner
+      const isOwner = req.user.id === String(blog.userId._id); // FIXED
       const comment = blog.comments.id(req.params.commentId);
 
       if (!comment)
         return res.status(404).json({ message: "Comment not found" });
 
       const isCommentOwner =
-        comment.userId.toString() === req.user.id;
+        comment.userId._id.toString() === req.user.id; // FIXED
 
       if (!isAdmin && !isOwner && !isCommentOwner) {
         return res.status(403).json({
