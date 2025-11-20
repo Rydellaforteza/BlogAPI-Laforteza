@@ -5,21 +5,26 @@ function clean(blog) {
   blog = blog.toObject();
   delete blog.__v;
 
-  
+  // Author (KEEP _id AND username)
   if (blog.userId && blog.userId.username) {
-    blog.author = { username: blog.userId.username };
+    blog.author = {
+      _id: blog.userId._id.toString(),
+      username: blog.userId.username
+    };
   }
   delete blog.userId;
 
-
+  // Comments (also keep _id + username)
   if (blog.comments && blog.comments.length > 0) {
     blog.comments = blog.comments.map(c => {
       if (typeof c.toObject === "function") c = c.toObject();
-
       delete c.__v;
 
       if (c.userId && c.userId.username) {
-        c.author = { username: c.userId.username };
+        c.author = {
+          _id: c.userId._id.toString(),
+          username: c.userId.username
+        };
       }
 
       delete c.userId;
@@ -29,6 +34,7 @@ function clean(blog) {
 
   return blog;
 }
+
 
 
 exports.createBlog = (req, res) => {
