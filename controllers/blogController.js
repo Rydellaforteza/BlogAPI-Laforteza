@@ -194,23 +194,22 @@ exports.deleteComment = (req, res) => {
       if (!blog) return res.status(404).json({ message: "Blog not found" });
 
       const isAdmin = req.user.isAdmin === true;
-      const isOwner = req.user.id === String(blog.userId);
+      const isOwner = req.user.id === String(blog.userId); // blog owner
+      const comment = blog.comments.id(req.params.commentId);
 
-      if (!isAdmin && !isOwner) {
+      if (!comment)
+        return res.status(404).json({ message: "Comment not found" });
+
+      const isCommentOwner =
+        comment.userId.toString() === req.user.id;
+
+      if (!isAdmin && !isOwner && !isCommentOwner) {
         return res.status(403).json({
-          message: "Only the blog author or an admin can delete comments"
+          message: "Only admin, blog owner, or comment owner can delete comments"
         });
       }
 
-      const index = blog.comments.findIndex(
-        c => String(c._id) === req.params.commentId
-      );
-
-      if (index === -1) {
-        return res.status(404).json({ message: "Comment not found" });
-      }
-
-      blog.comments.splice(index, 1);
+      comment.remove();
 
       blog.save().then(() => {
         return res.status(200).json({ message: "Comment deleted" });
@@ -221,3 +220,4 @@ exports.deleteComment = (req, res) => {
       return res.status(500).json({ message: "Server error" });
     });
 };
+
