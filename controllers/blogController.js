@@ -184,40 +184,6 @@ exports.addComment = (req, res) => {
 };
 
 
-exports.updateComment = (req, res) => {
-  if (req.user.isAdmin !== true) {
-    return res.status(403).json({ message: "Admin access required" });
-  }
-
-  Blog.findById(req.params.blogId)
-    .populate("userId", "username")
-    .populate("comments.userId", "username")
-    .then(blog => {
-      if (!blog) return res.status(404).json({ message: "Blog not found" });
-
-      const comment = blog.comments.id(req.params.commentId);
-      if (!comment) return res.status(404).json({ message: "Comment not found" });
-
-      comment.comment = req.body.comment || comment.comment;
-      comment.updatedAt = new Date();
-
-      blog.save().then(updated => {
-        const cleanBlog = clean(updated);
-        const updatedComment = cleanBlog.comments.find(
-          c => String(c._id) === req.params.commentId
-        );
-
-        return res.status(200).json({
-          message: "Comment updated",
-          comment: updatedComment
-        });
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      return res.status(500).json({ message: "Server error" });
-    });
-};
 
 
 exports.deleteComment = (req, res) => {

@@ -26,8 +26,6 @@ router.delete("/:blogId/remove", auth.authenticate, blogController.deleteBlog);
 // ADD COMMENT (authenticated)
 router.post("/:blogId/comments", auth.authenticate, blogController.addComment);
 
-// UPDATE COMMENT (admin ONLY)
-router.patch("/:blogId/comments/:commentId/edit", auth.authenticate, blogController.updateComment);
 
 // DELETE COMMENT (admin OR blog owner)
 router.delete("/:blogId/comments/:commentId/remove", auth.authenticate, blogController.deleteComment);
